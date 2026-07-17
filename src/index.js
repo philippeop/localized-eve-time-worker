@@ -20,20 +20,20 @@ async function verifyDiscordSignature(request, publicKey) {
 		return false;
 	}
 	try {
-		console.log("Validation start");
-		console.log("Validation publicKey", publicKey.length);
+		console.debug("Validation start");
+		console.debug("Validation publicKey", publicKey.length);
 		const signature = request.headers.get('X-Signature-Ed25519');
-		console.log("Validation signature", signature.length);
+		console.debug("Validation signature", signature.length);
 		const timestamp = request.headers.get('X-Signature-Timestamp');
-		console.log("Validation timestap", timestamp.length	);
+		console.debug("Validation timestap", timestamp.length	);
 		const body = await request.text();
-		console.log("Validation body", body.length);
+		console.debug("Validation body", body.length);
 		const verified = await verifyKey(body, signature, timestamp, publicKey);
-		console.log("Validation verified", verified);
+		console.debug("Validation verified", verified);
 
 		const isValidRequest = signature && timestamp && verified;
 		if (!isValidRequest) {
-			console.log("Validation failed");
+			console.debug("Validation failed");
 			return false;
 		}
 		return JSON.parse(body);
@@ -50,7 +50,7 @@ export default {
 		const json = await verifyDiscordSignature(request, env.DISCORD_PUBLIC_KEY);
 		if (!json) return new Response('Validation failed', { status: 401 });
 
-		console.log("Received request type", json.type);
+		console.debug("Received request type", json.type);
 
 		if (json.type === 1) return new Response(JSON.stringify({ type: 1 }));
 		if (json.type === 2) {
@@ -67,7 +67,7 @@ export default {
 					}), { headers: { 'Content-Type': 'application/json' } });
 				}
 			}
-			console.log("Unknown command:", name);
+			console.debug("Unknown command:", name);
 		}
 
 		return new Response(JSON.stringify({ type: 4, data: { content: 'OK' } }));
@@ -75,8 +75,11 @@ export default {
 };
 
 function eveTime(options) {
+	console.debug("Processing eveTime command with options:", JSON.stringify(options));
 	const timeOption = options ? options.find(opt => opt.name === 'time') : null;
 	const userInput = timeOption ? timeOption.value : '';
+
+	console.debug("User input for time:", userInput);
 
 	if (!/^\d{4}$/.test(userInput)) {
 		return new Response(JSON.stringify({
@@ -87,6 +90,8 @@ function eveTime(options) {
 
 	const hours = parseInt(userInput.substring(0, 2), 10);
 	const minutes = parseInt(userInput.substring(2, 4), 10);
+
+	console.debug("Parsed hours:", hours, "Parsed minutes:", minutes);
 
 	if (hours > 23 || minutes > 59) {
 		return new Response(JSON.stringify({
@@ -100,6 +105,8 @@ function eveTime(options) {
 
 	// Convert millisecond date string to UNIX seconds
 	const unixSeconds = Math.floor(targetDate.getTime() / 1000);
+
+	console.debug("Calculated UNIX seconds:", unixSeconds);
 
 	return new Response(JSON.stringify({
 		type: 4,
