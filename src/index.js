@@ -117,10 +117,6 @@ function eveTime(options) {
 	// Convert millisecond date string to UNIX seconds
 	const unixSeconds = Math.floor(targetDate.getTime() / 1000);
 
-	targetDate.setDate(targetDate.getDate() + 1);
-
-	const unixSecondsNext = Math.floor(targetDate.getTime() / 1000);
-
 	//console.debug("Calculated UNIX seconds:", unixSeconds);
-	return new EphemeralMessageResponse(`${userInput}\n<t:${unixSeconds}:R>\n<t:${unixSeconds}:f>\nTomorow:\n<t:${unixSecondsNext}:R>\n<t:${unixSecondsNext}:f>`);
+	return new EphemeralMessageResponse(`${userInput}\n<t:${unixSeconds}:R>\n<t:${unixSeconds}:t>\n<t:${unixSeconds}:f>`);
 }
