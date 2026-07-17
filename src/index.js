@@ -11,16 +11,28 @@
 import { verifyKey } from 'discord-interactions';
 
 async function verifyDiscordSignature(request, publicKey) {
+	if (request.method !== 'POST') {
+		console.error("Method not allowed");
+		return false;
+	}
+	if (!publicKey) {
+		console.error("Public key not set in environment variables");
+		return false;
+	}
 	try {
 		const signature = request.headers.get('X-Signature-Ed25519');
 		const timestamp = request.headers.get('X-Signature-Timestamp');
 		const body = await request.text();
 
 		const isValidRequest = signature && timestamp && (await verifyKey(body, signature, timestamp, publicKey));
-		return isValidRequest;
-	} 
+		if (!isValidRequest) {
+			console.log("Validation failed");
+			return false;
+		}
+		return JSON.parse(body);
+	}
 	catch (err) {
-		console.error("Crypto verification crashed:", err);
+		console.error("Validation crashed:", err);
 		return false;
 	}
 }
@@ -28,13 +40,12 @@ async function verifyDiscordSignature(request, publicKey) {
 export default {
 	async fetch(request, env, ctx) {
 
-		const validationResponse = await validate(request, env.DISCORD_PUBLIC_KEY);
-		if (validationResponse) return validationResponse;
+		const json = await verifyDiscordSignature(request, env.DISCORD_PUBLIC_KEY);
+		if (!json) return new Response('Validation failed', { status: 401 });
 
-		const interaction = await request.json();
-		if (interaction.type === 1) return new Response(JSON.stringify({ type: 1 }));
-		if (interaction.type === 2) {
-			const { name, options } = interaction.data;
+		if (json.type === 1) return new Response(JSON.stringify({ type: 1 }));
+		if (json.type === 2) {
+			const { name, options } = json.data;
 			if (name === 'evetime') {
 				try {
 					return eveTime(options);
@@ -47,27 +58,12 @@ export default {
 					}), { headers: { 'Content-Type': 'application/json' } });
 				}
 			}
+			console.log("Unknown command:", name);
 		}
 
 		return new Response(JSON.stringify({ type: 4, data: { content: 'OK' } }));
 	}
 };
-
-async function validate(request, key) {
-	if (request.method !== 'POST') {
-		return new Response('Method Not Allowed', { status: 405 });
-	}
-
-	if (!key) {
-		console.error("Public key not set in environment variables");
-		return new Response('Invalid configuration', { status: 500 });
-	}
-
-	if (!(await verifyDiscordSignature(request, key))) {
-		console.log("Discord signature validation failed");
-		return new Response('Invalid Signature', { status: 401 });
-	}
-}
 
 function eveTime(options) {
 	const timeOption = options ? options.find(opt => opt.name === 'time') : null;
