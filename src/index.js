@@ -8,13 +8,30 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
-// export default {
-// 	async fetch(request, env, ctx) {
-// 		return new Response("Hello World!");
-// 	},
-// };
-
 // Robust Discord Verification Handler
+// async function verifyDiscordSignature(request, publicKey) {
+// 	const signature = request.headers.get('X-Signature-Ed25519');
+// 	const timestamp = request.headers.get('X-Signature-Timestamp');
+
+// 	if (!signature || !timestamp || !publicKey) return false;
+
+// 	try {
+// 		const body = await request.clone().arrayBuffer();
+// 		const messageLog = new Uint8Array([...Buffer.from(timestamp), ...new Uint8Array(body)]);
+
+// 		// Using subtle crypto with ed25519
+// 		return await crypto.subtle.verify(
+// 			'NODE-ED25519',
+// 			await crypto.subtle.importKey('raw', Buffer.from(publicKey, 'hex'), { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' }, false, ['verify']),
+// 			Buffer.from(signature, 'hex'),
+// 			messageLog
+// 		);
+// 	} catch (err) {
+// 		console.error("Crypto verification crashed:", err);
+// 		return false;
+// 	}
+// }
+
 async function verifyDiscordSignature(request, publicKey) {
 	const signature = request.headers.get('X-Signature-Ed25519');
 	const timestamp = request.headers.get('X-Signature-Timestamp');
@@ -23,13 +40,35 @@ async function verifyDiscordSignature(request, publicKey) {
 
 	try {
 		const body = await request.clone().arrayBuffer();
-		const messageLog = new Uint8Array([...Buffer.from(timestamp), ...new Uint8Array(body)]);
 
-		// Using subtle crypto with ed25519
+		// Convert timestamp string to bytes using native TextEncoder
+		const encoder = new TextEncoder();
+		const timestampBytes = encoder.encode(timestamp);
+
+		// Merge timestamp bytes and body array buffer together
+		const messageLog = new Uint8Array(timestampBytes.length + body.byteLength);
+		messageLog.set(timestampBytes);
+		messageLog.set(new Uint8Array(body), timestampBytes.length);
+
+		// Helper to convert Hex strings to Uint8Array without Buffer
+		const hexToBytes = (hex) => {
+			const bytes = new Uint8Array(hex.length / 2);
+			for (let i = 0; i < hex.length; i += 2) {
+				bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+			}
+			return bytes;
+		};
+
 		return await crypto.subtle.verify(
 			'NODE-ED25519',
-			await crypto.subtle.importKey('raw', Buffer.from(publicKey, 'hex'), { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' }, false, ['verify']),
-			Buffer.from(signature, 'hex'),
+			await crypto.subtle.importKey(
+				'raw',
+				hexToBytes(publicKey),
+				{ name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' },
+				false,
+				['verify']
+			),
+			hexToBytes(signature),
 			messageLog
 		);
 	} catch (err) {
