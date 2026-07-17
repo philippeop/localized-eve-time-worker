@@ -50,7 +50,7 @@ export default {
 		const json = await verifyDiscordSignature(request, env.DISCORD_PUBLIC_KEY);
 		if (!json) return new Response('Validation failed', { status: 401 });
 
-		console.log("Received request:", json);
+		console.log("Received request type", json.type);
 
 		if (json.type === 1) return new Response(JSON.stringify({ type: 1 }));
 		if (json.type === 2) {
