@@ -8,44 +8,18 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+import { verifyKey } from 'discord-interactions';
+
 async function verifyDiscordSignature(request, publicKey) {
-	const signature = request.headers.get('X-Signature-Ed25519');
-	const timestamp = request.headers.get('X-Signature-Timestamp');
-
-	if (!signature || !timestamp || !publicKey) return false;
-
 	try {
-		const body = await request.clone().arrayBuffer();
+		const signature = request.headers.get('X-Signature-Ed25519');
+		const timestamp = request.headers.get('X-Signature-Timestamp');
+		const body = await request.text();
 
-		const encoder = new TextEncoder();
-		const timestampBytes = encoder.encode(timestamp);
-
-		const messageLog = new Uint8Array(timestampBytes.length + body.byteLength);
-		messageLog.set(timestampBytes);
-		messageLog.set(new Uint8Array(body), timestampBytes.length);
-
-		const hexToBytes = (hex) => {
-			const bytes = new Uint8Array(hex.length / 2);
-			for (let i = 0; i < hex.length; i += 2) {
-				bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-			}
-			return bytes;
-		};
-
-		// FIXED: Using universally standard 'Ed25519' algorithm names instead of Node extensions
-		return await crypto.subtle.verify(
-			'Ed25519',
-			await crypto.subtle.importKey(
-				'raw',
-				hexToBytes(publicKey),
-				{ name: 'Ed25519', namedCurve: 'Ed25519' },
-				false,
-				['verify']
-			),
-			hexToBytes(signature),
-			messageLog
-		);
-	} catch (err) {
+		const isValidRequest = signature && timestamp && (await verifyKey(body, signature, timestamp, publicKey));
+		return isValidRequest;
+	} 
+	catch (err) {
 		console.error("Crypto verification crashed:", err);
 		return false;
 	}
