@@ -58,7 +58,7 @@ async function verifyDiscordSignature(request, publicKey) {
 export default {
   async fetch(request, env, ctx) {
     if (request.method !== 'POST') {
-      return new Response('Method Not Allowed', { status: 405 });
+      return new Response('Method Not Allowed ' + env.DISCORD_PUBLIC_KEY.length, { status: 405 });
     }
 
     // Verify incoming headers using your saved environment variable
