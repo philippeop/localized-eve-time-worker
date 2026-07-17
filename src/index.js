@@ -20,9 +20,13 @@ async function verifyDiscordSignature(request, publicKey) {
 		return false;
 	}
 	try {
+		console.log("Validation start");
 		const signature = request.headers.get('X-Signature-Ed25519');
+		console.log("Validation signature", signature.length);
 		const timestamp = request.headers.get('X-Signature-Timestamp');
+		console.log("Validation timestap", timestamp.length	);
 		const body = await request.text();
+		console.log("Validation body", body.length);
 
 		const isValidRequest = signature && timestamp && (await verifyKey(body, signature, timestamp, publicKey));
 		if (!isValidRequest) {
