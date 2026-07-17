@@ -8,9 +8,22 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
-import { 
+import {
 	InteractionResponseType,
-	verifyKey } from 'discord-interactions';
+	verifyKey
+} from 'discord-interactions';
+
+class JsonResponse extends Response {
+  constructor(body, init) {
+    const jsonBody = JSON.stringify(body);
+    init = init || {
+      headers: {
+        'content-type': 'application/json;charset=UTF-8',
+      },
+    };
+    super(jsonBody, init);
+  }
+}
 
 async function verifyDiscordSignature(request, publicKey) {
 	if (request.method !== 'POST') {
@@ -27,7 +40,7 @@ async function verifyDiscordSignature(request, publicKey) {
 		const signature = request.headers.get('X-Signature-Ed25519');
 		console.debug("Validation signature", signature.length);
 		const timestamp = request.headers.get('X-Signature-Timestamp');
-		console.debug("Validation timestap", timestamp.length	);
+		console.debug("Validation timestap", timestamp.length);
 		const body = await request.text();
 		console.debug("Validation body", body.length);
 		const verified = await verifyKey(body, signature, timestamp, publicKey);
