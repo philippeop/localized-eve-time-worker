@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "shiny-breeze-c779",
+	"name": "localized-eve-time-worker",
 	"main": "src/index.js",
 	"compatibility_date": "2026-07-17",
 	"observability": {
