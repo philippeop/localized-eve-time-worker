@@ -120,7 +120,7 @@ function eveTime(options) {
 	//console.debug("Calculated UNIX seconds:", unixSeconds);
 	return new EphemeralMessageResponse(
 `${userInput}
-\<t:${unixSeconds}:R> <t:${unixSeconds}:R>
-\<t:${unixSeconds}:t> <t:${unixSeconds}:t>
-\<t:${unixSeconds}:f> <t:${unixSeconds}:f>`);
+\\<t:${unixSeconds}:R> <t:${unixSeconds}:R>
+\\<t:${unixSeconds}:t> <t:${unixSeconds}:t>
+\\<t:${unixSeconds}:f> <t:${unixSeconds}:f>`);
 }
