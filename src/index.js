@@ -21,14 +21,17 @@ async function verifyDiscordSignature(request, publicKey) {
 	}
 	try {
 		console.log("Validation start");
+		console.log("Validation publicKey", publicKey.length);
 		const signature = request.headers.get('X-Signature-Ed25519');
 		console.log("Validation signature", signature.length);
 		const timestamp = request.headers.get('X-Signature-Timestamp');
 		console.log("Validation timestap", timestamp.length	);
 		const body = await request.text();
 		console.log("Validation body", body.length);
+		const verified = await verifyKey(body, signature, timestamp, publicKey);
+		console.log("Validation verified", verified);
 
-		const isValidRequest = signature && timestamp && (await verifyKey(body, signature, timestamp, publicKey));
+		const isValidRequest = signature && timestamp && verified;
 		if (!isValidRequest) {
 			console.log("Validation failed");
 			return false;
@@ -46,6 +49,8 @@ export default {
 
 		const json = await verifyDiscordSignature(request, env.DISCORD_PUBLIC_KEY);
 		if (!json) return new Response('Validation failed', { status: 401 });
+
+		console.log("Received request:", json);
 
 		if (json.type === 1) return new Response(JSON.stringify({ type: 1 }));
 		if (json.type === 2) {
