@@ -40,26 +40,47 @@ async function verifyDiscordSignature(request, publicKey) {
 
 export default {
 	async fetch(request, env, ctx) {
-		const key = env.DISCORD_PUBLIC_KEY || ''
-		if (request.method !== 'POST') return new Response('Method Not Allowed ' + key.length, { status: 405 });
 
-		if (!(await verifyDiscordSignature(request, key))) {
-			console.log("Validation failed");
-			return new Response('Invalid Signature', { status: 401 });
-		}
+		const validationResponse = await validate(request);
+		if (validationResponse) return validationResponse;
 
 		const interaction = await request.json();
 		if (interaction.type === 1) return new Response(JSON.stringify({ type: 1 }));
 		if (interaction.type === 2) {
 			const { name, options } = interaction.data;
 			if (name === 'evetime') {
-				return eveTime(options);
+				try {
+					return eveTime(options);
+				}
+				catch (err) {
+					console.error("Error processing eveTime command:", err);
+					return new Response(JSON.stringify({
+						type: 4,
+						data: { content: "❌ An error occurred while processing your request.", flags: 64 }
+					}), { headers: { 'Content-Type': 'application/json' } });
+				}
 			}
 		}
 
 		return new Response(JSON.stringify({ type: 4, data: { content: 'OK' } }));
 	}
 };
+
+async function validate(request) {
+	if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+
+	const key = env.DISCORD_PUBLIC_KEY
+
+	if (!key) {
+		console.log("Public key not set in environment variables");
+		return new Response('Invalid configuration', { status: 500 });
+	}
+
+	if (!(await verifyDiscordSignature(request, key))) {
+		console.log("Discord signature validation failed");
+		return new Response('Invalid Signature', { status: 401 });
+	}
+}
 
 function eveTime(options) {
 	const timeOption = options ? options.find(opt => opt.name === 'time') : null;
