@@ -41,7 +41,7 @@ async function verifyDiscordSignature(request, publicKey) {
 export default {
 	async fetch(request, env, ctx) {
 
-		const validationResponse = await validate(request);
+		const validationResponse = await validate(request, env.DISCORD_PUBLIC_KEY);
 		if (validationResponse) return validationResponse;
 
 		const interaction = await request.json();
@@ -66,10 +66,8 @@ export default {
 	}
 };
 
-async function validate(request) {
+async function validate(request, key) {
 	if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
-
-	const key = env.DISCORD_PUBLIC_KEY
 
 	if (!key) {
 		console.log("Public key not set in environment variables");
