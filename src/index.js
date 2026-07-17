@@ -118,5 +118,9 @@ function eveTime(options) {
 	const unixSeconds = Math.floor(targetDate.getTime() / 1000);
 
 	//console.debug("Calculated UNIX seconds:", unixSeconds);
-	return new EphemeralMessageResponse(`${userInput}\n<t:${unixSeconds}:R>\n<t:${unixSeconds}:t>\n<t:${unixSeconds}:f>`);
+	return new EphemeralMessageResponse(
+`${userInput}
+\<t:${unixSeconds}:R> <t:${unixSeconds}:R>
+\<t:${unixSeconds}:t> <t:${unixSeconds}:t>
+\<t:${unixSeconds}:f> <t:${unixSeconds}:f>`);
 }
